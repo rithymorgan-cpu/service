@@ -1,54 +1,73 @@
- "use client";
-import { useEffect, useMemo, useState } from "react";
-import { Activity, AlertTriangle, Bell, Box, CalendarDays, CheckCircle2, ChevronDown, ChevronRight, ClipboardList, Cog, LayoutDashboard, LogOut, Menu, Monitor, Package, Plus, Search, Settings, ShieldCheck, Users, Wrench, X, FileText, Clock3 } from "lucide-react";
+export default function Dashboard() {
+  return (
+    <>
+      <div className="page-heading">
+        <div>
+          <h1>Dashboard</h1>
+          <p>Welcome to Morgan Service Management.</p>
+        </div>
 
-type Machine={id:string;name:string;model:string;location:string;hours:number;status:string;lastService:string};
-type Service={id:string;machine:string;type:string;date:string;technician:string;hours:number;notes:string;status:string};
-const initialMachines:Machine[]=[
-{id:"MG-001",name:"Morgan Cutter 01",model:"Next 2",location:"Cutting Room A",hours:1280,status:"Running",lastService:"2026-11-12"},
-{id:"MG-002",name:"Morgan Cutter 02",model:"Delta 70",location:"Cutting Room A",hours:2460,status:"Maintenance",lastService:"2026-10-28"},
-{id:"MG-003",name:"Morgan Cutter 03",model:"Next 2",location:"Cutting Room B",hours:3890,status:"Running",lastService:"2026-10-30"},
-{id:"MG-004",name:"Morgan Cutter 04",model:"Next 2",location:"Cutting Room B",hours:510,status:"Running",lastService:"2026-11-18"}
-];
-const initialServices:Service[]=[
-{id:"SR-1024",machine:"Morgan Cutter 01",type:"Routine service",date:"2026-11-12",technician:"Rithy",hours:1200,notes:"Cleaned cutter head, checked belt tension and lubrication.",status:"Completed"},
-{id:"SR-1023",machine:"Morgan Cutter 02",type:"Repair",date:"2026-10-28",technician:"Technician 01",hours:2400,notes:"Investigating cutting head vibration.",status:"In progress"},
-{id:"SR-1022",machine:"Morgan Cutter 03",type:"Preventive maintenance",date:"2026-10-30",technician:"Rithy",hours:3800,notes:"Checked rails, sharpener and vacuum system.",status:"Completed"}
-];
-const nav=[["Overview",LayoutDashboard],["Machines",Monitor],["Service Records",ClipboardList],["Maintenance Plan",CalendarDays],["Spare Parts",Package],["Reports",FileText],["Users & Roles",Users],["Settings",Settings]] as const;
-export default function Home(){
- const [section,setSection]=useState("Overview"),[machines,setMachines]=useState(initialMachines),[services,setServices]=useState(initialServices),[role,setRole]=useState("Admin"),[query,setQuery]=useState(""),[modal,setModal]=useState(""),[mobile,setMobile]=useState(false),[ready,setReady]=useState(false);
- useEffect(()=>{try{const m=localStorage.getItem("morgan-machines"),s=localStorage.getItem("morgan-services");if(m)setMachines(JSON.parse(m));if(s)setServices(JSON.parse(s));}catch{}setReady(true)},[]);
- useEffect(()=>{if(ready){localStorage.setItem("morgan-machines",JSON.stringify(machines));localStorage.setItem("morgan-services",JSON.stringify(services));}},[machines,services,ready]);
- const due=machines.filter(m=>m.hours%500>=400).length;
- const filtered=machines.filter(m=>(m.name+" "+m.model+" "+m.id).toLowerCase().includes(query.toLowerCase()));
- const addMachine=(f:FormData)=>{setMachines([...machines,{id:String(f.get("id")),name:String(f.get("name")),model:String(f.get("model")),location:String(f.get("location")),hours:Number(f.get("hours")),status:"Running",lastService:new Date().toISOString().slice(0,10)}]);setModal("");};
- const addService=(f:FormData)=>{setServices([{id:"SR-"+Date.now().toString().slice(-5),machine:String(f.get("machine")),type:String(f.get("type")),date:String(f.get("date")),technician:String(f.get("technician")),hours:Number(f.get("hours")),notes:String(f.get("notes")),status:"Completed"},...services]);setModal("");};
- const title=section==="Overview"?"Dashboard":section;
- return <div className="shell">
-  <aside className={`sidebar ${mobile?"show":""}`}><div className="brand"><div className="brandmark"><Cog size={23}/></div><div><b>MORGAN SERVICE</b><small>MAINTENANCE SYSTEM</small></div><button className="close mobile-only" onClick={()=>setMobile(false)}><X/></button></div>
-   <div className="workspace"><span className="workspace-dot"/> Factory workspace <ChevronDown size={14}/></div>
-   <div className="navlabel">WORKSPACE</div>{nav.map(([label,Icon])=><button key={label} className={`navitem ${section===label?"active":""}`} onClick={()=>{setSection(label);setMobile(false)}}><Icon size={18}/><span>{label}</span>{label==="Maintenance Plan"&&<i className="navcount">{due}</i>}</button>)}
-   <div className="sidebar-bottom"><div className="helpbox"><ShieldCheck size={19}/><b>Service control</b><p>Keep every machine ready for production.</p></div><div className="profile"><div className="avatar">RK</div><div><b>Rithy Kang</b><small>{role} account</small></div><button title="Sign out" onClick={()=>setRole("Technician")}><LogOut size={16}/></button></div></div>
-  </aside>
-  {mobile&&<div className="scrim" onClick={()=>setMobile(false)}/>}
-  <main className="main"><header className="topbar"><button className="mobile-menu" onClick={()=>setMobile(true)}><Menu/></button><div className="crumb">Workspace <ChevronRight size={14}/><b>{title}</b></div><div className="topactions"><span className="today"><CalendarDays size={15}/> {new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}</span><button className="iconbtn" title="Notifications"><Bell size={18}/><i/></button><div className="rolepick"><span>View as</span><select value={role} onChange={e=>setRole(e.target.value)}><option>Admin</option><option>Technician</option></select></div></div></header>
-  <div className="content"><div className="pagehead"><div><div className="eyebrow">MORGAN MACHINE MANAGEMENT</div><h1>{title}</h1><p>{section==="Overview"?"Monitor machine health, service activity and upcoming maintenance.":`Manage your ${section.toLowerCase()} in one place.`}</p></div><div className="headbuttons">{role==="Admin"&&<button className="btn secondary" onClick={()=>setModal("machine")}><Plus size={16}/> Add machine</button>}<button className="btn primary" onClick={()=>setModal("service")}><Plus size={16}/> New service</button></div></div>
-  {section==="Overview"&&<><div className="stats"><Stat icon={<Monitor/>} label="Total machines" value={machines.length} note="Registered assets" tone="blue"/><Stat icon={<CheckCircle2/>} label="Running" value={machines.filter(m=>m.status==="Running").length} note="Ready for production" tone="green"/><Stat icon={<Wrench/>} label="Under service" value={machines.filter(m=>m.status==="Maintenance").length} note="Needs technician attention" tone="orange"/><Stat icon={<AlertTriangle/>} label="Maintenance due" value={due} note="Approaching service interval" tone="red"/></div>
-  <div className="grid2"><section className="panel"><div className="panelhead"><div><h2>Machine overview</h2><p>Current machine status and operating hours</p></div><button className="textbtn" onClick={()=>setSection("Machines")}>View all <ChevronRight size={15}/></button></div><MachineTable machines={machines.slice(0,4)} onSelect={()=>setSection("Machines")}/></section><section className="panel"><div className="panelhead"><div><h2>Maintenance alerts</h2><p>Check machines approaching service</p></div><span className="pill orange">{due} alerts</span></div>{machines.filter(m=>m.hours%500>=400).length?machines.filter(m=>m.hours%500>=400).map(m=><div className="alertrow" key={m.id}><div className="alerticon"><Clock3 size={18}/></div><div className="alerttext"><b>{m.name}</b><small>{500-(m.hours%500)} hours until next 500H interval</small></div><span className="pill orange">Due soon</span></div>):<div className="empty">No upcoming maintenance alerts.</div>}<div className="interval-note"><b>Service intervals</b><span>500H · 1000H · 1500H · 2000H · 3000H · 4000H</span></div></section></div>
-  <section className="panel recent"><div className="panelhead"><div><h2>Recent service activity</h2><p>Latest maintenance and repair records</p></div><button className="textbtn" onClick={()=>setSection("Service Records")}>All records <ChevronRight size={15}/></button></div><ServiceTable services={services.slice(0,5)}/></section></>}
-  {section==="Machines"&&<section className="panel"><div className="panelhead"><div><h2>Machine register</h2><p>All registered Morgan auto cutters</p></div><div className="search"><Search size={16}/><input placeholder="Search machines..." value={query} onChange={e=>setQuery(e.target.value)}/></div></div><MachineTable machines={filtered} onSelect={()=>{}} detailed/></section>}
-  {section==="Service Records"&&<section className="panel"><div className="panelhead"><div><h2>Service history</h2><p>Repairs, routine service and preventive maintenance</p></div></div><ServiceTable services={services}/></section>}
-  {section==="Maintenance Plan"&&<section className="panel"><div className="panelhead"><div><h2>Hour-based maintenance plan</h2><p>Plan inspections at regular operating-hour intervals</p></div></div><div className="intervalgrid">{[500,1000,1500,2000,2500,3000,3500,4000].map(h=><div className="intervalcard" key={h}><Clock3/><b>{h}H</b><small>Service checkpoint</small></div>)}</div><div className="tablewrap"><table><thead><tr><th>Machine</th><th>Current hours</th><th>Next interval</th><th>Hours remaining</th><th>Status</th></tr></thead><tbody>{machines.map(m=>{const next=(Math.floor(m.hours/500)+1)*500;return <tr key={m.id}><td><b>{m.name}</b><small>{m.id}</small></td><td>{m.hours.toLocaleString()}H</td><td>{next}H</td><td>{next-m.hours}H</td><td><span className={`pill ${next-m.hours<=100?"orange":"green"}`}>{next-m.hours<=100?"Due soon":"On track"}</span></td></tr>})}</tbody></table></div></section>}
-  {section==="Spare Parts"&&<section className="panel"><div className="panelhead"><div><h2>Spare parts inventory</h2><p>Starter inventory view — connect database to share stock across users</p></div></div><div className="emptybox"><Package size={30}/><b>Spare parts module</b><span>Track part number, description, quantity, minimum stock and machine compatibility.</span><button className="btn secondary" onClick={()=>setModal("part")}>Add spare part</button></div></section>}
-  {section==="Reports"&&<section className="panel"><div className="panelhead"><div><h2>Service reports</h2><p>Summary of recorded maintenance activity</p></div></div><div className="stats compact"><Stat label="Total service records" value={services.length} icon={<ClipboardList/>} tone="blue"/><Stat label="Completed" value={services.filter(s=>s.status==="Completed").length} icon={<CheckCircle2/>} tone="green"/><Stat label="In progress" value={services.filter(s=>s.status!=="Completed").length} icon={<Activity/>} tone="orange"/></div><ServiceTable services={services}/></section>}
-  {section==="Users & Roles"&&<section className="panel"><div className="panelhead"><div><h2>Users & permissions</h2><p>Role overview for the service team</p></div></div><div className="userrow"><div className="avatar">AD</div><div><b>Administrator</b><small>Full access · Manage machines, records, settings and users</small></div><span className="pill blue">Admin</span></div><div className="userrow"><div className="avatar teal">TC</div><div><b>Technician</b><small>Can view machines and create or update service records</small></div><span className="pill green">Technician</span></div><div className="notice">Prototype role switch is for preview only. Real account login and permission enforcement require Supabase authentication.</div></section>}
-  {section==="Settings"&&<section className="panel"><div className="panelhead"><div><h2>System settings</h2><p>Configure your machine service workspace</p></div></div><div className="settingrow"><div><b>Company / workspace name</b><small>Morgan Service</small></div><span className="pill green">Active</span></div><div className="settingrow"><div><b>Maintenance interval</b><small>500 operating hours</small></div><span>500H</span></div><div className="settingrow"><div><b>Data storage</b><small>Browser local storage in this prototype</small></div><span className="pill orange">Demo mode</span></div><button className="btn secondary" onClick={()=>{if(confirm("Reset demo data to the original sample records?")){setMachines(initialMachines);setServices(initialServices)}}}>Reset demo data</button></section>}
-  <footer>© 2026 Morgan Service Tracking <span>Built for machine maintenance teams</span></footer></div></main>
-  {modal&&<div className="modalback" onClick={()=>setModal("")}><div className="modal" onClick={e=>e.stopPropagation()}><div className="modalhead"><h2>{modal==="machine"?"Register machine":modal==="service"?"Create service record":"Add spare part"}</h2><button className="iconbtn" onClick={()=>setModal("")}><X/></button></div>{modal==="machine"?<form action={addMachine}><Field label="Machine ID"><input name="id" required placeholder="MG-005"/></Field><Field label="Machine name"><input name="name" required placeholder="Morgan Cutter 05"/></Field><Field label="Model"><select name="model"><option>Next 2</option><option>Delta 70</option><option>IQ80</option><option>Other</option></select></Field><Field label="Location"><input name="location" placeholder="Cutting Room A"/></Field><Field label="Operating hours"><input name="hours" type="number" min="0" defaultValue="0"/></Field><button className="btn primary full">Save machine</button></form>:modal==="service"?<form action={addService}><Field label="Machine"><select name="machine">{machines.map(m=><option key={m.id}>{m.name}</option>)}</select></Field><Field label="Service type"><select name="type"><option>Routine service</option><option>Preventive maintenance</option><option>Repair</option><option>Inspection</option></select></Field><Field label="Service date"><input name="date" type="date" required defaultValue={new Date().toISOString().slice(0,10)}/></Field><Field label="Technician"><input name="technician" required defaultValue={role==="Admin"?"Rithy":"Technician"}/></Field><Field label="Machine hours"><input name="hours" type="number" min="0" defaultValue="0"/></Field><Field label="Work notes"><textarea name="notes" placeholder="Describe work performed, parts replaced and findings..."/></Field><button className="btn primary full">Save service record</button></form>:<div className="notice">Spare parts inventory entry form will be enabled in the database-backed version.</div>}</div></div>}
- </div>
+        <button className="primary-button">
+          + Add Machine
+        </button>
+      </div>
+
+      <div className="stats-grid">
+        <div className="stat-card">
+          <p>Total Machines</p>
+          <h2>24</h2>
+          <span>All registered machines</span>
+        </div>
+
+        <div className="stat-card">
+          <p>Under Maintenance</p>
+          <h2>3</h2>
+          <span>Currently being serviced</span>
+        </div>
+
+        <div className="stat-card">
+          <p>Service Due</p>
+          <h2>5</h2>
+          <span>Upcoming maintenance</span>
+        </div>
+
+        <div className="stat-card">
+          <p>Completed Services</p>
+          <h2>18</h2>
+          <span>This month</span>
+        </div>
+      </div>
+
+      <div className="content-card">
+        <h2>Recent Service Records</h2>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Machine</th>
+              <th>Service Date</th>
+              <th>Service Type</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr>
+              <td>Morgan Cutter 01</td>
+              <td>27 Nov 2026</td>
+              <td>Regular Maintenance</td>
+              <td><span className="status done">Completed</span></td>
+            </tr>
+
+            <tr>
+              <td>Morgan Cutter 02</td>
+              <td>26 Nov 2026</td>
+              <td>Blade Replacement</td>
+              <td><span className="status pending">Pending</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
 }
-function Stat({icon,label,value,note,tone}:{icon:any;label:string;value:any;note?:string;tone:string}){return <div className="stat"><div className={`staticon ${tone}`}>{icon}</div><div><span>{label}</span><strong>{value}</strong><small>{note}</small></div></div>}
-function MachineTable({machines,onSelect,detailed=false}:{machines:Machine[];onSelect:()=>void;detailed?:boolean}){return <div className="tablewrap"><table><thead><tr><th>Machine</th><th>Model</th>{detailed&&<th>Location</th>}<th>Operating hours</th><th>Status</th><th>Last service</th></tr></thead><tbody>{machines.map(m=><tr key={m.id} onClick={onSelect}><td><div className="machinecell"><div className="machineicon"><Monitor size={17}/></div><div><b>{m.name}</b><small>{m.id}</small></div></div></td><td>{m.model}</td>{detailed&&<td>{m.location}</td>}<td>{m.hours.toLocaleString()}H</td><td><span className={`pill ${m.status==="Running"?"green":"orange"}`}>{m.status}</span></td><td>{m.lastService}</td></tr>)}</tbody></table>{machines.length===0&&<div className="empty">No machines match your search.</div>}</div>}
-function ServiceTable({services}:{services:Service[]}){return <div className="tablewrap"><table><thead><tr><th>Record ID</th><th>Machine</th><th>Service type</th><th>Date</th><th>Technician</th><th>Status</th></tr></thead><tbody>{services.map(s=><tr key={s.id}><td><b>{s.id}</b></td><td>{s.machine}<small>{s.hours} operating hours</small></td><td>{s.type}<small>{s.notes}</small></td><td>{s.date}</td><td>{s.technician}</td><td><span className={`pill ${s.status==="Completed"?"green":"orange"}`}>{s.status}</span></td></tr>)}</tbody></table>{services.length===0&&<div className="empty">No service records yet.</div>}</div>}
-function Field({label,children}:{label:string;children:any}){return <label className="field"><span>{label}</span>{children}</label>}
